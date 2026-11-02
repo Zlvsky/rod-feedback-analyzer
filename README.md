@@ -24,7 +24,7 @@ Git is already initialized. Commit `package-lock.json`; never commit `.env` or r
 
 ## Environment configuration
 
-Fill these eight values in `.env`; never paste credentials into chat:
+Fill the existing integration values in `.env`; never paste credentials into chat:
 
 | Variable | Value |
 | --- | --- |
@@ -32,6 +32,7 @@ Fill these eight values in `.env`; never paste credentials into chat:
 | `DISCORD_GUILD_ID` | Server snowflake ID |
 | `DISCORD_FEEDBACK_CHANNEL_ID` | Feedback channel snowflake ID |
 | `DISCORD_GENERAL_EN_CHANNEL_ID` | General English channel snowflake ID |
+| `DISCORD_FORUM_CHANNEL_ID` | Destination forum channel ID for the first-post importer |
 | `TRELLO_API_KEY` | Trello Power-Up API key |
 | `TRELLO_TOKEN` | Authorized Trello user token |
 | `TRELLO_BOARD_ID` | Full 24-character board ID |
@@ -58,8 +59,8 @@ Booleans must be `true` or `false`; misspellings fail validation. Shell environm
 
 1. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application and open **Bot** settings. Generate/reset the token and save it locally as `DISCORD_BOT_TOKEN`.
 2. Enable **Message Content Intent**. Without it Discord may omit text and attachments. Larger verified applications may need approval. This project uses REST, no Gateway or member-roster access. See the [official message resource](https://docs.discord.com/developers/resources/message).
-3. Use the installation/OAuth2 URL generator with the **bot** scope. Grant only **View Channel** and **Read Message History** (permission integer `66560`). Do not grant Administrator or message-writing permissions.
-4. Install in your server; restrict the role/channel overwrites to the two intended channels. The collector additionally enforces exact configured channel and guild IDs. It does not traverse threads, forums, other channels, or DMs.
+3. Use the installation/OAuth2 URL generator with the **bot** scope. Grant **View Channel** and **Read Message History** to the two legacy text channels. The first-post importer also needs **Send Messages** in the separately configured forum. Do not grant Administrator.
+4. Install in your server; restrict the channel overwrites to those destinations. The collector enforces exact configured text channel and guild IDs. It does not traverse threads, forums, other channels, or DMs.
 5. Enable Discord **Developer Mode**. Right-click the server and both channels, copy their IDs, and fill `.env`.
 6. Run `npm run collect` and inspect `data/messages.json` locally. An unexpected empty channel can mean missing Read Message History permission; Discord can return an empty array in that case.
 
@@ -196,6 +197,55 @@ chronological evidence author receives the footer credit. Titles are limited to
 remain in the review list with their source links. This command is local only;
 it neither publishes forum posts nor synchronizes Trello. Finish with summary
 and release the workflow lease. Force `--dry-run` for any migration Trello preview.
+
+To test the first post from `feedback-posts-selected.json`, configure
+`DISCORD_FORUM_CHANNEL_ID` and an unmoderated forum tag named `Suggestion`. Use the
+same migration DATA_DIR and a workflow lease. First inspect the plan:
+
+```sh
+npm run feedback:import-first -- --data-dir data/YOUR-MIGRATION --run-id UUID
+```
+
+After reviewing the plan, the following command creates only the first selected
+post. `DRY_RUN=false` and `--apply` are both required for a new Discord write:
+
+```sh
+DRY_RUN=false npm run feedback:import-first -- --data-dir data/YOUR-MIGRATION --run-id UUID --apply
+```
+
+The importer checks the forum's guild and type, finds the `Suggestion` tag by
+its current ID, sends the exact title and content with mentions and notifications
+disabled, and verifies the new thread and starter message. It records the intent
+and thread ID in `forum-first-post.json`. After an uncertain write, do not remove
+the journal to force a retry; inspect the destination post first. A successful
+rerun verifies the recorded post without creating another. This command cannot
+import the other selected posts.
+
+For an explicitly approved full selection, add `feedback-post-tags-selected.json`
+with one `id` and category `tag` for every selected post, in the same order. The
+available categories are `Bug`, `Suggestion`, `Balance`, and `Other feedback`.
+The first entry must retain `Suggestion`. The batch command checks every mapped
+post, forum tag, attribution footer, and existing journal before writing. Preview
+the counts with:
+
+```sh
+npm run feedback:import-selected -- --data-dir data/YOUR-MIGRATION --run-id UUID
+```
+
+When the user has authorized the remaining posts, submit them with:
+
+```sh
+DRY_RUN=false npm run feedback:import-selected -- --data-dir data/YOUR-MIGRATION --run-id UUID --apply
+```
+
+The batch skips the verified first post, creates the remainder sequentially,
+verifies each starter message and applied category tag, and writes one
+`forum-post-POST_ID.json` journal per post. It respects Discord retry delays.
+If a write outcome is uncertain, the journal stops a duplicate retry; inspect
+the destination forum before resuming. Release the workflow lease at the end.
+Entries marked `draft: true` may record a user-supplied excerpt without Discord
+message IDs, along with a source note and suggested tags. The batch excludes
+these drafts until their source details are supplied and the draft marker is removed.
 
 | File under DATA_DIR | Contents |
 | --- | --- |

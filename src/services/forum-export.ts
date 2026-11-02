@@ -11,8 +11,17 @@ export const forumExportSchema = z.strictObject({
   posts: z.array(z.strictObject({
     id: taskId, title: plainText(100).refine(value => !/[\r\n]/.test(value), 'Title must be one line'),
     description: plainText(1800), content: text(2000),
-    submittedBy: z.strictObject({ id: snowflake, username: text(100) }),
-    sourceMessageIds: z.array(snowflake).min(1), sourceUrls: z.array(discordUrl).min(1),
+    submittedBy: z.strictObject({ id: snowflake.nullable(), username: text(100) }),
+    sourceMessageIds: z.array(snowflake), sourceUrls: z.array(discordUrl),
+    draft: z.literal(true).optional(), sourceNote: text(500).optional(),
+    suggestedTags: z.array(z.enum(['Bug', 'Suggestion', 'Balance', 'Other feedback', 'Planned', 'In Progress', 'Done', 'Not planned'])).min(1).optional(),
+  }).superRefine((post, ctx) => {
+    if (post.draft) {
+      if (!post.sourceNote) ctx.addIssue({ code: 'custom', message: 'Draft without Discord sources needs a source note' });
+    } else if (!post.submittedBy.id || post.sourceMessageIds.length === 0 || post.sourceUrls.length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'Importable post needs submitter ID and Discord sources' });
+    }
+    if (post.sourceMessageIds.length !== post.sourceUrls.length) ctx.addIssue({ code: 'custom', message: 'Source IDs and URLs must align' });
   })),
   reviewItems: z.array(z.strictObject({ id: taskId, title: text(160), description: text(4000), reason: text(500),
     sourceMessageIds: z.array(snowflake).min(1), sourceUrls: z.array(discordUrl).min(1) })),

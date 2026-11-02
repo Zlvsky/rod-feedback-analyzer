@@ -53,4 +53,16 @@ describe('local forum export', () => {
     await store.write('tasks.json', { version: 1, tasks: [task] }, tasksSchema);
     await expect(exportForumPosts(config, store)).rejects.toThrow();
   });
+  it('requires real sources for importable posts and records provenance for a draft', async () => {
+    const draft = {
+      id: 'rod-draft-mythic-class-sets', title: 'Add mythic class sets',
+      description: 'Add class sets with special bonuses.',
+      content: 'Add class sets with special bonuses.\n\n-- submitted by @player',
+      submittedBy: { id: null, username: 'player' }, sourceMessageIds: [], sourceUrls: [],
+      draft: true, sourceNote: 'Conversation supplied by the user without message links.',
+    };
+    const exportData = { version: 1, generatedAt: fixtureNow.toISOString(), sourceChannelId: '100000000000000001', posts: [draft], reviewItems: [] };
+    expect(forumExportSchema.safeParse(exportData).success).toBe(true);
+    expect(forumExportSchema.safeParse({ ...exportData, posts: [{ ...draft, draft: undefined }] }).success).toBe(false);
+  });
 });

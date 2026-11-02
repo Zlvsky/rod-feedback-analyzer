@@ -17,6 +17,8 @@
     "check:config": "node --import tsx src/cli/check-config.ts",
     "summary": "node --import tsx src/cli/summary.ts",
     "feedback:export": "node --import tsx src/cli/export-forum.ts",
+    "feedback:import-first": "node --import tsx src/cli/import-first-forum.ts",
+    "feedback:import-selected": "node --import tsx src/cli/import-selected-forum.ts",
     "workflow:begin": "node --import tsx src/cli/workflow.ts",
     "workflow:end": "node --import tsx src/cli/workflow.ts",
     "demo:prepare": "node --import tsx src/cli/demo-prepare.ts",
