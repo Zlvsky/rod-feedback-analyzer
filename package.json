@@ -1,0 +1,31 @@
+{
+  "name": "rod-discord-feedback",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Discord → Codex reasoning → Trello feedback pipeline for Realm of Dungeons",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "collect": "node --import tsx src/cli/collect.ts",
+    "init:data": "node --import tsx src/cli/init-data.ts",
+    "trello:context": "node --import tsx src/cli/trello-context.ts",
+    "analysis:prepare": "node --import tsx src/cli/analysis-prepare.ts",
+    "analysis:accept": "node --import tsx src/cli/analysis-accept.ts",
+    "tasks:validate": "node --import tsx src/cli/validate-tasks.ts",
+    "sync:trello": "node --import tsx src/cli/sync-trello.ts",
+    "sync:resolve": "node --import tsx src/cli/resolve-operation.ts",
+    "check:config": "node --import tsx src/cli/check-config.ts",
+    "summary": "node --import tsx src/cli/summary.ts",
+    "feedback:export": "node --import tsx src/cli/export-forum.ts",
+    "workflow:begin": "node --import tsx src/cli/workflow.ts",
+    "workflow:end": "node --import tsx src/cli/workflow.ts",
+    "demo:prepare": "node --import tsx src/cli/demo-prepare.ts",
+    "demo": "node --import tsx src/cli/demo.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": { "dotenv": "^17.2.3", "zod": "^4.1.12" },
+  "devDependencies": { "@types/node": "^22.19.0", "tsx": "^4.20.6", "typescript": "^5.9.3", "vitest": "^3.2.4" }
+}

@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "tasks": [{ "id": "unstable", "title": "", "type": "opinion", "impact": "critical", "confidence": 1.7, "sources": [] }]
+}
